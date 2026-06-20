@@ -12,6 +12,7 @@ import org.bukkit.event.entity.EntityToggleGlideEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.event.inventory.PrepareSmithingEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 
@@ -118,6 +119,29 @@ public class CombatListener implements Listener {
         }
     }
 
+    // ────────────────────────────────────────────
+// 대장장이 작업대: 네더라이트 업그레이드 차단
+// config.yml의 netherite.enabled: false 일 때 동작
+// ────────────────────────────────────────────
+
+// import 추가 필요:
+// import org.bukkit.event.inventory.PrepareSmithingEvent;
+
+@EventHandler(priority = EventPriority.HIGHEST)
+public void onPrepareSmithing(PrepareSmithingEvent event) {
+    if (!isNetheriteDisabled()) return;
+
+    ItemStack result = event.getResult();
+    if (result == null) return;
+
+    if (NETHERITE_EQUIPMENT.contains(result.getType())) {
+        event.setResult(null); // 결과 슬롯을 비워 제작 불가
+        if (event.getView().getPlayer() instanceof Player player) {
+            player.sendMessage("§c네더라이트 장비는 이 서버에서 제작할 수 없습니다!");
+        }
+    }
+}
+    
     @EventHandler
     public void onInventoryClickNetherite(InventoryClickEvent event) {
         if (!isNetheriteDisabled()) return;
