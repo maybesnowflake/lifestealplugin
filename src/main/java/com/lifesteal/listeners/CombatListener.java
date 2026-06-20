@@ -41,7 +41,9 @@ public class CombatListener implements Listener {
         this.combatManager = plugin.getCombatManager();
     }
 
+    // ────────────────────────────────────────────
     // PvP 감지 → Combat Tag
+    // ────────────────────────────────────────────
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onEntityDamage(EntityDamageByEntityEvent event) {
         if (!plugin.isLifeStealEnabled()) return;
@@ -75,7 +77,7 @@ public class CombatListener implements Listener {
     }
 
     // ────────────────────────────────────────────
-    // 겉날개: Combat Tag 중에만 차단 (설정 가능, combat.restrict-elytra)
+    // 겉날개: Combat Tag 중에만 차단 (combat.restrict-elytra)
     // ────────────────────────────────────────────
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onToggleGlide(EntityToggleGlideEvent event) {
@@ -90,7 +92,7 @@ public class CombatListener implements Listener {
     }
 
     // ────────────────────────────────────────────
-    // 엔더상자: Combat Tag 중에만 차단 (설정 가능, combat.restrict-ender-chest)
+    // 엔더상자: Combat Tag 중에만 차단 (combat.restrict-ender-chest)
     // ────────────────────────────────────────────
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onInventoryOpen(InventoryOpenEvent event) {
@@ -105,7 +107,7 @@ public class CombatListener implements Listener {
     }
 
     // ────────────────────────────────────────────
-    // 네더라이트 장비: config에서 비활성화 시 착용/사용 차단
+    // 네더라이트 장비: 손에 들고 사용(우클릭 등) 차단
     // ────────────────────────────────────────────
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerInteract(PlayerInteractEvent event) {
@@ -120,34 +122,35 @@ public class CombatListener implements Listener {
     }
 
     // ────────────────────────────────────────────
-// 대장장이 작업대: 네더라이트 업그레이드 차단
-// config.yml의 netherite.enabled: false 일 때 동작
-// ────────────────────────────────────────────
-
-// import 추가 필요:
-// import org.bukkit.event.inventory.PrepareSmithingEvent;
-
-@EventHandler(priority = EventPriority.HIGHEST)
-public void onPrepareSmithing(PrepareSmithingEvent event) {
-    if (!isNetheriteDisabled()) return;
-
-    ItemStack result = event.getResult();
-    if (result == null) return;
-
-    if (NETHERITE_EQUIPMENT.contains(result.getType())) {
-        event.setResult(null); // 결과 슬롯을 비워 제작 불가
-        if (event.getView().getPlayer() instanceof Player player) {
-            player.sendMessage("§c네더라이트 장비는 이 서버에서 제작할 수 없습니다!");
-        }
-    }
-}
-    
-    @EventHandler
+    // 네더라이트 장비: 인벤토리 내 클릭(착용 등) 차단
+    // ────────────────────────────────────────────
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onInventoryClickNetherite(InventoryClickEvent event) {
         if (!isNetheriteDisabled()) return;
-        ItemStack item = event.getCurrentItem();
-        if (item != null && NETHERITE_EQUIPMENT.contains(item.getType())) {
+        ItemStack current = event.getCurrentItem();
+        ItemStack cursor  = event.getCursor();
+        if ((current != null && NETHERITE_EQUIPMENT.contains(current.getType())) ||
+            (cursor  != null && NETHERITE_EQUIPMENT.contains(cursor.getType()))) {
             event.setCancelled(true);
+            if (event.getWhoClicked() instanceof Player player) {
+                player.sendMessage("§c네더라이트 장비는 이 서버에서 사용할 수 없습니다!");
+            }
+        }
+    }
+
+    // ────────────────────────────────────────────
+    // 네더라이트 장비: 대장장이 작업대 업그레이드 차단
+    // ────────────────────────────────────────────
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onPrepareSmithing(PrepareSmithingEvent event) {
+        if (!isNetheriteDisabled()) return;
+        ItemStack result = event.getResult();
+        if (result == null) return;
+        if (NETHERITE_EQUIPMENT.contains(result.getType())) {
+            event.setResult(null);
+            if (event.getView().getPlayer() instanceof Player player) {
+                player.sendMessage("§c네더라이트 장비는 이 서버에서 제작할 수 없습니다!");
+            }
         }
     }
 
@@ -158,10 +161,10 @@ public void onPrepareSmithing(PrepareSmithingEvent event) {
     public void onInventoryClick(InventoryClickEvent event) {
         if (event.getInventory().getType() != InventoryType.ENDER_CHEST) return;
 
-        ItemStack cursor = event.getCursor();
+        ItemStack cursor  = event.getCursor();
         ItemStack clicked = event.getCurrentItem();
 
-        boolean isDragonEggCursor = cursor != null && cursor.getType() == Material.DRAGON_EGG;
+        boolean isDragonEggCursor  = cursor  != null && cursor.getType()  == Material.DRAGON_EGG;
         boolean isDragonEggClicked = clicked != null && clicked.getType() == Material.DRAGON_EGG;
 
         if (isDragonEggCursor || isDragonEggClicked) {
@@ -170,6 +173,9 @@ public void onPrepareSmithing(PrepareSmithingEvent event) {
         }
     }
 
+    // ────────────────────────────────────────────
+    // 헬퍼
+    // ────────────────────────────────────────────
     private boolean isNetheriteDisabled() {
         return !plugin.getConfig().getBoolean("netherite.enabled", true);
     }
