@@ -6,10 +6,12 @@ import com.lifesteal.managers.HeartManager;
 import com.lifesteal.utils.ItemUtils;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;   // ← 이 줄 추가
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+
 
 public class ItemListener implements Listener {
 
