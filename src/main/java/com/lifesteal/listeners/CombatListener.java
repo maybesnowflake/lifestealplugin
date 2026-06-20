@@ -12,7 +12,7 @@ import org.bukkit.event.entity.EntityToggleGlideEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryType;
-import org.bukkit.inventory.SmithingInventory;
+import org.bukkit.event.inventory.SmithItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 
@@ -112,23 +112,26 @@ public class CombatListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerInteract(PlayerInteractEvent event) {
         if (!isNetheriteDisabled()) return;
-        Player player = event.getPlayer();
         ItemStack item = event.getItem();
         if (item == null) return;
         if (NETHERITE_EQUIPMENT.contains(item.getType())) {
             event.setCancelled(true);
-            player.sendMessage("§c네더라이트 장비는 이 서버에서 사용할 수 없습니다!");
+            event.getPlayer().sendMessage("§c네더라이트 장비는 이 서버에서 사용할 수 없습니다!");
         }
     }
 
     // ────────────────────────────────────────────
-    // 네더라이트 장비: 인벤토리 내 클릭(착용 등) 차단
+    // 네더라이트 장비: 인벤토리 클릭(착용/이동) 차단
+    // SmithingInventory는 SmithItemEvent에서 별도 처리하므로 여기선 제외
     // ────────────────────────────────────────────
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onInventoryClickNetherite(InventoryClickEvent event) {
         if (!isNetheriteDisabled()) return;
+        if (event.getInventory().getType() == InventoryType.SMITHING) return; // SmithItemEvent에서 처리
+
         ItemStack current = event.getCurrentItem();
         ItemStack cursor  = event.getCursor();
+
         if ((current != null && NETHERITE_EQUIPMENT.contains(current.getType())) ||
             (cursor  != null && NETHERITE_EQUIPMENT.contains(cursor.getType()))) {
             event.setCancelled(true);
@@ -139,16 +142,13 @@ public class CombatListener implements Listener {
     }
 
     // ────────────────────────────────────────────
-    // 네더라이트 장비: 대장장이 작업대 결과 슬롯 클릭 차단
-    // PrepareSmithingEvent는 1.20.1에서 클라이언트 동기화 문제가 있어
-    // InventoryClickEvent로 결과 슬롯을 직접 막는 방식 사용
+    // 네더라이트 장비: 대장장이 작업대 제작 완료 차단
+    // SmithItemEvent = 결과 슬롯에서 아이템을 실제로 꺼낼 때 발생
+    // 1.21.11 기준 가장 안정적인 방법
     // ────────────────────────────────────────────
     @EventHandler(priority = EventPriority.HIGHEST)
-    public void onSmithingClick(InventoryClickEvent event) {
+    public void onSmithItem(SmithItemEvent event) {
         if (!isNetheriteDisabled()) return;
-        if (!(event.getInventory() instanceof SmithingInventory)) return;
-        // 결과 슬롯(0번)에서 아이템 꺼내는 행위 차단
-        if (event.getRawSlot() != 2) return;
         ItemStack result = event.getCurrentItem();
         if (result == null) return;
         if (NETHERITE_EQUIPMENT.contains(result.getType())) {
