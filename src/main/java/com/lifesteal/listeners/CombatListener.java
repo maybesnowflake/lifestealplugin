@@ -12,7 +12,7 @@ import org.bukkit.event.entity.EntityToggleGlideEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryType;
-import org.bukkit.event.inventory.PrepareSmithingEvent;
+import org.bukkit.inventory.SmithingInventory;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 
@@ -139,16 +139,21 @@ public class CombatListener implements Listener {
     }
 
     // ────────────────────────────────────────────
-    // 네더라이트 장비: 대장장이 작업대 업그레이드 차단
+    // 네더라이트 장비: 대장장이 작업대 결과 슬롯 클릭 차단
+    // PrepareSmithingEvent는 1.20.1에서 클라이언트 동기화 문제가 있어
+    // InventoryClickEvent로 결과 슬롯을 직접 막는 방식 사용
     // ────────────────────────────────────────────
     @EventHandler(priority = EventPriority.HIGHEST)
-    public void onPrepareSmithing(PrepareSmithingEvent event) {
+    public void onSmithingClick(InventoryClickEvent event) {
         if (!isNetheriteDisabled()) return;
-        ItemStack result = event.getResult();
+        if (!(event.getInventory() instanceof SmithingInventory)) return;
+        // 결과 슬롯(0번)에서 아이템 꺼내는 행위 차단
+        if (event.getRawSlot() != 2) return;
+        ItemStack result = event.getCurrentItem();
         if (result == null) return;
         if (NETHERITE_EQUIPMENT.contains(result.getType())) {
-            event.setResult(null);
-            if (event.getView().getPlayer() instanceof Player player) {
+            event.setCancelled(true);
+            if (event.getWhoClicked() instanceof Player player) {
                 player.sendMessage("§c네더라이트 장비는 이 서버에서 제작할 수 없습니다!");
             }
         }
