@@ -1,96 +1,107 @@
 package com.lifesteal.managers;
 
 import com.lifesteal.LifeSteal;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
 public class HeartManager {
 
     private final LifeSteal plugin;
-    private final Map<UUID, Integer> heartMap = new HashMap<>();
-    private File dataFile;
+    private final File dataFile;
     private FileConfiguration dataConfig;
+
+    // 하트 1개 = 2 HP (체력 포인트)
+    private static final double HP_PER_HEART = 2.0;
 
     public HeartManager(LifeSteal plugin) {
         this.plugin = plugin;
-        loadData();
-    }
-
-    public int getHearts(Player player) {
-        return heartMap.getOrDefault(player.getUniqueId(), getStartHearts());
-    }
-
-    public void setHearts(Player player, int hearts) {
-        int max = getMaxHearts();
-        int min = plugin.getConfig().getInt("hearts.min", 1);
-        hearts = Math.max(min, Math.min(max, hearts));
-        heartMap.put(player.getUniqueId(), hearts);
-        applyHearts(player, hearts);
-    }
-
-    public void addHeart(Player player) {
-        int current = getHearts(player);
-        if (current < getMaxHearts()) {
-            setHearts(player, current + 1);
-            player.sendMessage("§c❤ §a최대 체력이 §c+1§a 증가했습니다! §7(" + getHearts(player) + "/" + getMaxHearts() + ")");
-        } else {
-            player.sendMessage("§c이미 최대 체력입니다! §7(" + getMaxHearts() + "/" + getMaxHearts() + ")");
-        }
-    }
-
-    public boolean removeHeart(Player player) {
-        int current = getHearts(player);
-        if (current <= 1) {
-            setHearts(player, 0);
-            return false;
-        }
-        setHearts(player, current - 1);
-        player.sendMessage("§c❤ 최대 체력이 §c-1§c 감소했습니다. §7(" + getHearts(player) + "/" + getMaxHearts() + ")");
-        return true;
-    }
-
-    public void applyHearts(Player player, int hearts) {
-        double maxHp = hearts * 2.0;
-        player.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).setBaseValue(maxHp);
-        if (player.getHealth() > maxHp) player.setHealth(maxHp);
-    }
-
-    public void initPlayer(Player player) {
-        if (!heartMap.containsKey(player.getUniqueId())) {
-            heartMap.put(player.getUniqueId(), getStartHearts());
-        }
-        applyHearts(player, getHearts(player));
-    }
-
-    public int getStartHearts() { return plugin.getConfig().getInt("hearts.start", 10); }
-    public int getMaxHearts() { return plugin.getConfig().getInt("hearts.max", 20); }
-    public boolean loseOnNaturalDeath() { return plugin.getConfig().getBoolean("hearts.lose-on-natural-death", true); }
-
-    private void loadData() {
         dataFile = new File(plugin.getDataFolder(), "hearts.yml");
         if (!dataFile.exists()) {
-            plugin.getDataFolder().mkdirs();
             try { dataFile.createNewFile(); } catch (IOException e) { e.printStackTrace(); }
         }
         dataConfig = YamlConfiguration.loadConfiguration(dataFile);
-        for (String key : dataConfig.getKeys(false)) {
-            try {
-                heartMap.put(UUID.fromString(key), dataConfig.getInt(key));
-            } catch (IllegalArgumentException ignored) {}
+    }
+
+    // ────────────────────────────────────────────
+    // 하트 조회
+    // ────────────────────────────────────────────
+    public int getHearts(Player player) {
+        String key = player.getUniqueId().toString();
+        if (!dataConfig.contains(key)) {
+            int defaultHearts = plugin.getConfig().getInt("hearts.default", 10);
+            setHearts(player, defaultHearts);
+            return defaultHearts;
+        }
+        return dataConfig.getInt(key);
+    }
+
+    // ────────────────────────────────────────────
+    // 하트 설정 (최소/최대 범위 적용)
+    // ────────────────────────────────────────────
+    public void setHearts(Player player, int hearts) {
+        int min = plugin.getConfig().getInt("hearts.min", 1);
+        int max = plugin.getConfig().getInt("hearts.max", 20);
+        hearts = Math.max(min, Math.min(max, hearts));
+
+        dataConfig.set(player.getUniqueId().toString(), hearts);
+        saveData();
+        applyMaxHealth(player, hearts);
+    }
+
+    // ────────────────────────────────────────────
+    // 하트 추가 / 제거
+    // ────────────────────────────────────────────
+    public void addHeart(Player player) {
+        setHearts(player, getHearts(player) + 1);
+    }
+
+    public void removeHeart(Player player) {
+        setHearts(player, getHearts(player) - 1);
+    }
+
+    // ────────────────────────────────────────────
+    // 최대 체력 적용
+    // 1.21.4+ 부터 Attribute.GENERIC_MAX_HEALTH → Attribute.MAX_HEALTH 로 변경됨
+    // ────────────────────────────────────────────
+    private void applyMaxHealth(Player player, int hearts) {
+        AttributeInstance attr = player.getAttribute(Attribute.MAX_HEALTH);
+        if (attr == null) return;
+
+        double newMax = hearts * HP_PER_HEART;
+        attr.setBaseValue(newMax);
+
+        // 현재 체력이 새 최대치를 초과하면 조정
+        if (player.getHealth() > newMax) {
+            player.setHealth(newMax);
         }
     }
 
+    // ────────────────────────────────────────────
+    // 로그인 시 체력 동기화
+    // ────────────────────────────────────────────
+    public void syncOnJoin(Player player) {
+        applyMaxHealth(player, getHearts(player));
+    }
+
+    // ────────────────────────────────────────────
+    // 저장
+    // ────────────────────────────────────────────
     public void saveAll() {
-        for (Map.Entry<UUID, Integer> entry : heartMap.entrySet()) {
-            dataConfig.set(entry.getKey().toString(), entry.getValue());
+        saveData();
+    }
+
+    private void saveData() {
+        try {
+            dataConfig.save(dataFile);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        try { dataConfig.save(dataFile); } catch (IOException e) { e.printStackTrace(); }
     }
 }
