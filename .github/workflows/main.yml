@@ -5,6 +5,9 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -22,8 +25,22 @@ jobs:
       - name: Maven으로 빌드
         run: mvn package -B
 
-      - name: jar 파일 업로드
+      - name: jar 파일 업로드 (Artifacts)
         uses: actions/upload-artifact@v4
         with:
           name: LifeSteal-plugin
           path: target/LifeSteal-*.jar
+
+      - name: 릴리즈 태그 생성
+        id: tag
+        run: echo "tag=build-$(date +%Y%m%d-%H%M%S)" >> "$GITHUB_OUTPUT"
+
+      - name: GitHub Release 자동 생성
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: "LifeSteal ${{ steps.tag.outputs.tag }}"
+          files: target/LifeSteal-*.jar
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
