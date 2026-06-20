@@ -1,0 +1,163 @@
+# ════════════════════════════════════════════
+# LifeSteal 플러그인 설정 파일
+# ════════════════════════════════════════════
+
+# 라이프스틸 시스템 전체 on/off (인게임 명령어 /lifesteal on, /lifesteal off 로도 변경 가능)
+lifesteal-enabled: true
+
+# 체력 설정
+hearts:
+  start: 10
+  max: 20
+  min: 1
+  lose-on-natural-death: true
+
+# Combat Tag 설정
+combat:
+  tag-duration: 20
+  heart-use-cooldown: 30
+  # 아래 항목들은 "Combat Tag 중에만" 금지할지 여부를 결정합니다 (true=태그 중 금지, false=항상 허용)
+  restrict-elytra: true
+  restrict-ender-chest: true
+  restrict-riptide: true
+
+# Withdraw 설정
+withdraw:
+  max-per-use: 3
+
+# 밴 설정
+ban:
+  message: "§c당신의 체력이 0이 되었습니다. 밴되었습니다!"
+
+# 사망 설정
+death:
+  drop-radius: 0   # 0=제자리, N=반경 N블록 안에 랜덤 퍼짐
+
+# 네더라이트 설정
+netherite:
+  enabled: true              # false면 네더라이트 장비(검/도구/방어구) 사용 불가 (주괴/블록은 유지)
+  disable-upgrade-recipe: true   # true면 다이아 장비를 네더라이트로 업그레이드하는 제작법(스미시 템플릿) 차단
+
+# 주민 거래 무제한
+villager:
+  unlimited-trades: true
+
+# 검 발화(Fire Aspect) 인첸트 제거 여부
+enchants:
+  remove-fire-aspect: true
+
+# ════════════════════════════════════════════
+# 커스텀 레시피 설정
+# 형식: shape(3x3, 가로문자 9개로 1~9 슬롯 표현) + ingredients(문자→재료)
+# 빈 슬롯은 AIR
+# ════════════════════════════════════════════
+recipes:
+
+  # 기본 제작법 비활성화 옵션
+  disable-vanilla-mace: true              # 바닐라 철퇴(메이스) 조합법 비활성화
+  disable-vanilla-golden-apple: true      # 바닐라 황금사과 조합법 비활성화
+
+  # 커스텀 네더라이트 검 대체 아이템
+  custom_netherite_sword:
+    enabled: true
+    shape:
+      - "ABA"
+      - "CDC"
+      - "AEA"
+    ingredients:
+      A: SHULKER_SHELL
+      B: DRAGON_EGG
+      C: ELYTRA
+      D: DIAMOND_SWORD
+      E: DRAGON_BREATH
+    result:
+      material: NETHERITE_SWORD
+      amount: 1
+      name: "§5§l용살자의 검"
+      lore:
+        - "§7네더라이트 검을 대체하는 커스텀 무기"
+      custom-model-data: 2001
+
+  # 커스텀 네더라이트 흉갑 대체 아이템
+  custom_netherite_chestplate:
+    enabled: true
+    shape:
+      - "ABC"
+      - "DED"
+      - "FGF"
+    ingredients:
+      A: CRIMSON_FUNGUS
+      B: NETHERITE_UPGRADE_SMITHING_TEMPLATE
+      C: WARPED_FUNGUS
+      D: END_CRYSTAL
+      E: DIAMOND_CHESTPLATE
+      F: ANCIENT_DEBRIS
+      G: NETHER_STAR
+    result:
+      material: NETHERITE_CHESTPLATE
+      amount: 1
+      name: "§5§l용살자의 흉갑"
+      lore:
+        - "§7네더라이트 흉갑을 대체하는 커스텀 방어구"
+      custom-model-data: 2002
+
+  # 커스텀 불사의 토템
+  custom_totem:
+    enabled: true
+    shape:
+      - "ABA"
+      - "BCB"
+      - "ABA"
+    ingredients:
+      A: DIAMOND_BLOCK
+      B: ANCIENT_DEBRIS
+      C: ENCHANTED_GOLDEN_APPLE
+    result:
+      material: TOTEM_OF_UNDYING
+      amount: 1
+      name: "§d§l수호의 토템"
+      lore:
+        - "§7불사의 토템을 대체하는 커스텀 아이템"
+        - "§c주의: 이 서버는 토템 부활 효과가 비활성화되어 있습니다"
+      custom-model-data: 2003
+
+  # 커스텀 철퇴
+  custom_mace:
+    enabled: true
+    shape:
+      - "ABA"
+      - " C "
+      - " C "
+    ingredients:
+      A: HEAVY_CORE
+      B: NETHERITE_BLOCK
+      C: BREEZE_ROD
+    result:
+      material: MACE
+      amount: 1
+      name: "§c§l심판의 철퇴"
+      lore:
+        - "§7커스텀 철퇴 제작법"
+      custom-model-data: 2004
+
+  # 커스텀 황금사과
+  custom_golden_apple:
+    enabled: true
+    shape:
+      - " A "
+      - "ABA"
+      - " A "
+    ingredients:
+      A: GOLD_INGOT
+      B: APPLE
+    result:
+      material: GOLDEN_APPLE
+      amount: 1
+      name: "§6§l커스텀 황금사과"
+      lore:
+        - "§7금 주괴로 만든 커스텀 황금사과"
+      custom-model-data: 2005
+
+# 추가 커스텀 레시피 (인게임 명령어로 추가됨)
+# /lifesteal addrecipe 명령어로 등록한 레시피가 여기에 저장됩니다
+custom-extra-recipes: {}

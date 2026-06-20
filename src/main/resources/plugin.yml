@@ -1,0 +1,38 @@
+name: LifeSteal
+version: 2.0.0
+main: com.lifesteal.LifeSteal
+api-version: 1.20
+description: LifeSteal SMP Plugin
+author: LifeSteal
+
+commands:
+  withdraw:
+    description: 하트를 아이템으로 변환합니다
+    usage: /withdraw <개수>
+    permission: lifesteal.withdraw
+  w:
+    description: 귓속말
+    usage: /w <플레이어> <메시지>
+    permission: lifesteal.whisper
+  lifesteal:
+    description: LifeSteal 관리 명령어
+    usage: /lifesteal <reload|sethearts|on|off|addrecipe|giveheartitem|giverevivebook>
+    permission: lifesteal.admin
+  revive:
+    description: 밴된 플레이어 부활
+    usage: /revive <플레이어>
+    permission: lifesteal.admin
+
+permissions:
+  lifesteal.withdraw:
+    description: /withdraw 명령어 사용
+    default: true
+  lifesteal.whisper:
+    description: /w 귓속말 사용
+    default: true
+  lifesteal.admin:
+    description: 관리자 명령어
+    default: op
+  lifesteal.bypass.combat:
+    description: Combat Tag 우회
+    default: false
